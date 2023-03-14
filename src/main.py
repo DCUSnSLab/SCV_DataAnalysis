@@ -9,13 +9,24 @@ import numpy as np
 import pyzed.sl as sl
 import cv2
 from zed_interfaces.msg import Object
+import yaml
+from rosbag.bag import Bag
+import rosbag
+import rospy
 
 def subscriber():
+	topics = "/zed2/zed_node/obj_det/objects"
+	bag = rosbag.Bag('230209_DCU.bag')
+	for topic, msg in bag.read_messages(topics=[topics, Object]):
+		print(msg)
+	bag.close()
+
+	rospy.init_node('bounding_box_subscriber')
+
 	def callback(data):
-		rospy.loginfo(data)
+		print("%s", data.data)
+		rospy.loginfo(rospy.get_caller_id() + 'I heard %s', data.data)
 	rospy.Subscriber("/zed2/zed_node/obj_det/objects", Object, callback)
-	test = Object()
-	print(test)
 	# spin()은 노드가 중지될 때까지 파이썬이 종료되지 않도록 합니다.
 	rospy.spin()
 
@@ -112,5 +123,5 @@ def publisher():
 
 if __name__ == '__main__':
 	while not rospy.is_shutdown():
-		publisher()
+		# publisher()
 		subscriber()
