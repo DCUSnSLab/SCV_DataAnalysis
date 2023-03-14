@@ -6,8 +6,20 @@ from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point
 from std_msgs import *
 import numpy as np
+import pyzed.sl as sl
+import cv2
+from zed_interfaces.msg import Object
 
-def publish_bounding_boxes():
+def subscriber():
+	def callback(data):
+		rospy.loginfo(data)
+	rospy.Subscriber("/zed2/zed_node/obj_det/objects", Object, callback)
+	test = Object()
+	print(test)
+	# spin()은 노드가 중지될 때까지 파이썬이 종료되지 않도록 합니다.
+	rospy.spin()
+
+def publisher():
 	# Initialize ROS node and publisher
 	rospy.init_node('bounding_box_publisher')
 	publisher = rospy.Publisher('bounding_boxes', Marker, queue_size=10)
@@ -21,7 +33,7 @@ def publish_bounding_boxes():
 	points.action = line_strip.action = Marker().ADD
 	points.pose.orientation.w = line_strip.pose.orientation.w = 1.0
 
-	# x, y, z 다 변수로 지정 !!
+	# x, y, z 변수바꾸기
 
 	for i in range(0, 3):
 		line_list[i] = Marker()
@@ -100,4 +112,5 @@ def publish_bounding_boxes():
 
 if __name__ == '__main__':
 	while not rospy.is_shutdown():
-		publish_bounding_boxes()
+		publisher()
+		subscriber()
