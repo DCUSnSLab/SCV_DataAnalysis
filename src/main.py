@@ -26,7 +26,6 @@ def zed_subscriber():
 def marker_publisher():
 	# Marker publisher 정의
 	box_publisher = rospy.Publisher('bounding_boxes', Marker, queue_size=10)
-
 	line_list = [Marker()] * 12
 
 	for l in range(len(line_list)):
@@ -56,6 +55,7 @@ def marker_publisher():
 		p.z = cube1[i, 2]
 		line_list[i-1].points.append(p)
 		line_list[i-1].points.append(d)
+		# markerArray.markers.append(line_list[i-1])
 		box_publisher.publish(line_list[i-1])
 
 	for i in range(6, 10):
@@ -69,6 +69,7 @@ def marker_publisher():
 		p.z = cube1[i, 2]
 		line_list[i-2].points.append(d)
 		line_list[i-2].points.append(p)
+		# markerArray.markers.append(line_list[i-2])
 		box_publisher.publish(line_list[i-2])
 
 	# 다른 포인트를 써서 해보자.
@@ -85,7 +86,11 @@ def marker_publisher():
 		# 8, 9, 10, 11
 		line_list[i+7].points.append(d)
 		line_list[i+7].points.append(p)
+		# markerArray.markers.append(line_list[i+7])
 		box_publisher.publish(line_list[i+7])
+
+	# box_publisher.publish(markerArray)
+	rospy.sleep(0.01)
 
 if __name__ == '__main__':
 	while not rospy.is_shutdown():

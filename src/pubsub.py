@@ -16,9 +16,12 @@ class Bbox_feature:
         self.box_subscriber = rospy.Subscriber("/zed2/zed_node/obj_det/objects", ObjectsStamped, self.callback)
 
     # make 3d bounding box
-    def draw_box(self, box_points):
-
+    def draw_box(self, cube1):
         line_list = [Marker()] * 13
+
+        box_points = np.array([cube1[0], cube1[1], cube1[2], cube1[3], cube1[0],
+                          cube1[4], cube1[5], cube1[6], cube1[7], cube1[4]])
+
         for l in range(len(line_list)):
             line_list[l] = Marker()
             line_list[l].action = Marker().ADD
@@ -43,7 +46,7 @@ class Bbox_feature:
             p.z = box_points[i, 2]
             line_list[i - 1].points.append(p)
             line_list[i - 1].points.append(d)
-            box_publisher.publish(line_list[i - 1])
+            self.box_publisher.publish(line_list[i - 1])
 
         for i in range(6, 10):
             p = Point()
@@ -56,9 +59,7 @@ class Bbox_feature:
             p.z = box_points[i, 2]
             line_list[i - 2].points.append(d)
             line_list[i - 2].points.append(p)
-            box_publisher.publish(line_list[i - 2])
-
-        # 다른 포인트를 써서 해보자.
+            self.box_publisher.publish(line_list[i - 2])
 
         for i in range(5):
             p = Point()
@@ -72,13 +73,11 @@ class Bbox_feature:
             # 8, 9, 10, 11
             line_list[i + 7].points.append(d)
             line_list[i + 7].points.append(p)
-            box_publisher.publish(line_list[i + 7])
-
-
+            self.box_publisher.publish(line_list[i + 7])
 
     def callback(self, data):
-        raw_point = np.empty((8, 3))
         max_len = len(data.objects)
+        raw_point = np.empty((8, 3))
         for i in range(max_len):
             for j in range(0, 8):
                 # i : object number
@@ -87,7 +86,8 @@ class Bbox_feature:
                 raw_point[j, 1] = data.objects[i].bounding_box_3d.corners[j].kp[1]
                 raw_point[j, 2] = data.objects[i].bounding_box_3d.corners[j].kp[2]
             print("raw_point: \n", raw_point)
-        self.draw_box(raw_point)
+            self.draw_box(raw_point)
+        rospy.sleep(5)
 
 def main():
     Bbox_feature()
