@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 import rospy
-from visualization_msgs.msg import Marker
+from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import Point
 from std_msgs import *
 import numpy as np
@@ -9,32 +9,36 @@ from zed_interfaces.msg import ObjectsStamped
 class Bbox_feature:
     def __init__(self):
         # Initialize ros publisher, ros subscriber
+        self.line_id = 0
         # topic where we publish
-        self.box_publisher = rospy.Publisher('bounding_boxes', Marker, queue_size=10)
-
+        self.box_publisher = rospy.Publisher('bounding_boxes', MarkerArray, queue_size=10)
         # subscribed Topic
         self.box_subscriber = rospy.Subscriber("/zed2/zed_node/obj_det/objects", ObjectsStamped, self.callback)
 
     # make 3d bounding box
-    def draw_box(self, cube1):
+    def draw_box(self, cube1, line_id):
         line_list = [Marker()] * 13
+        markerArray = MarkerArray()
+        box_points = np.array([cube1[0], cube1[1], cube1[2], cube1[3], cube1[0], cube1[4], cube1[5], cube1[6], cube1[7], cube1[4]])
 
-        box_points = np.array([cube1[0], cube1[1], cube1[2], cube1[3], cube1[0],
-                          cube1[4], cube1[5], cube1[6], cube1[7], cube1[4]])
-
+        # define Marker().LINE_STRIP
         for l in range(len(line_list)):
+            line_list[l].header.stamp = rospy.Time.now()
             line_list[l] = Marker()
             line_list[l].action = Marker().ADD
-            line_list[l].header.frame_id = "map"
-            line_list[l].ns = "line_" + str(line_list[l])
+            # /zed2/zed_node/obj_det/objects => frame_id: "zed2_left_camera_frame"
+            line_list[l].header.frame_id = "zed2_left_camera_frame"
+            line_list[l].ns = "line_" + str(l)
             line_list[l].pose.orientation.w = 1.0
             line_list[l].type = Marker().LINE_STRIP
-            line_list[l].id = l
-            line_list[l].scale.x = 0.1
+            line_list[l].id = line_id
+            line_list[l].scale.x = 0.05
             line_list[l].color.b = 1.0
             line_list[l].color.g = 1.0
             line_list[l].color.a = 1.0
+            line_list[l].lifetime.secs = 1
 
+        # draw 3d Bounding Box
         for i in range(1, 5):
             p = Point()
             d = Point()
@@ -46,7 +50,6 @@ class Bbox_feature:
             p.z = box_points[i, 2]
             line_list[i - 1].points.append(p)
             line_list[i - 1].points.append(d)
-            self.box_publisher.publish(line_list[i - 1])
 
         for i in range(6, 10):
             p = Point()
@@ -59,7 +62,6 @@ class Bbox_feature:
             p.z = box_points[i, 2]
             line_list[i - 2].points.append(d)
             line_list[i - 2].points.append(p)
-            self.box_publisher.publish(line_list[i - 2])
 
         for i in range(5):
             p = Point()
@@ -70,24 +72,23 @@ class Bbox_feature:
             p.x = box_points[i + 5, 0]
             p.y = box_points[i + 5, 1]
             p.z = box_points[i + 5, 2]
-            # 8, 9, 10, 11
             line_list[i + 7].points.append(d)
             line_list[i + 7].points.append(p)
-            self.box_publisher.publish(line_list[i + 7])
+        return line_list
 
+    # Get subscribed zed_interfaces/Objectstamped
     def callback(self, data):
         max_len = len(data.objects)
-        raw_point = np.empty((8, 3))
-        for i in range(max_len):
-            for j in range(0, 8):
-                # i : object number
-                # j : keypoints
-                raw_point[j, 0] = data.objects[i].bounding_box_3d.corners[j].kp[0]
-                raw_point[j, 1] = data.objects[i].bounding_box_3d.corners[j].kp[1]
-                raw_point[j, 2] = data.objects[i].bounding_box_3d.corners[j].kp[2]
+        raw_point = np.empty((max_len, 8, 3))
+        for i in range(max_len):    # i : object
+            for j in range(0, 8):   # j : keypoints
+                raw_point[i, j, 0] = data.objects[i].bounding_box_3d.corners[j].kp[0]
+                raw_point[i, j, 1] = data.objects[i].bounding_box_3d.corners[j].kp[1]
+                raw_point[i, j, 2] = data.objects[i].bounding_box_3d.corners[j].kp[2]
+                self.line_id = data.objects[i].label_id
             print("raw_point: \n", raw_point)
-            self.draw_box(raw_point)
-        rospy.sleep(5)
+            self.box_publisher.publish(self.draw_box(raw_point[i], data.objects[i].label_id))
+        rospy.sleep(0.5)
 
 def main():
     Bbox_feature()
