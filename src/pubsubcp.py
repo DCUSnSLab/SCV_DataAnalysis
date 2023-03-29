@@ -86,7 +86,8 @@ class Bbox_feature:
                 raw_point[i, j, 1] = data.objects[i].bounding_box_3d.corners[j].kp[1]
                 raw_point[i, j, 2] = data.objects[i].bounding_box_3d.corners[j].kp[2]
                 self.line_id = data.objects[i].label_id
-            print("raw_point: \n", raw_point)
+            print("raw_point: \n", raw_point[i])
+            print("label_id: ", data.objects[i].label_id)
             self.box_publisher.publish(self.draw_box(raw_point[i], data.objects[i].label_id))
         rospy.sleep(0.5)
 
