@@ -89,7 +89,7 @@ class Bbox_feature:
             print("raw_point: \n", raw_point[i])
             print("label_id: ", data.objects[i].label_id)
             self.box_publisher.publish(self.draw_box(raw_point[i], data.objects[i].label_id))
-        rospy.sleep(0.5)
+        # rospy.sleep(0.5)
 
 def main():
     Bbox_feature()
